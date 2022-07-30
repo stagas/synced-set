@@ -3,7 +3,7 @@
   "author": "stagas",
   "short": "stagas/synced-set",
   "description": "Synchronize a Set collection of objects across a wire.",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "MIT",
   "repository": {
     "type": "git",
