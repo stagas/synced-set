@@ -1,5 +1,4 @@
-import { dispatch, EventHandler } from 'event-toolkit'
-import { accessors } from 'everyday-utils'
+import { accessors, EventEmitter } from 'everyday-utils'
 import { pick } from 'pick-omit'
 
 export type Id<T> = keyof T
@@ -27,9 +26,15 @@ export interface SyncedSetOptionsOptionalId<T, R> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface SyncedSet<T, R> extends Set<T>, EventTarget {}
+export interface SyncedSet<T, R> extends Set<T> { }
 
-export class SyncedSet<T, R> extends EventTarget {
+export interface SyncedSetEvents<T> {
+  add: (item: T) => void
+  update: (item: T, key: keyof T) => void
+  delete: (item: T) => void
+}
+
+export class SyncedSet<T, R> extends EventEmitter<SyncedSetEvents<T>> {
   map = new Map<T[SyncedSetOptions<T, R>['id']], T>()
 
   added = new Set<T>()
@@ -37,9 +42,6 @@ export class SyncedSet<T, R> extends EventTarget {
   deleted = new Set<T[SyncedSetOptions<T, R>['id']]>()
 
   options!: SyncedSetOptions<T, R>
-
-  declare onadd: EventHandler<SyncedSet<T, R>, CustomEvent<T>>
-  declare ondelete: EventHandler<SyncedSet<T, R>, CustomEvent<T>>
 
   constructor(options: SyncedSetOptionsOptionalId<T, R>) {
     super()
@@ -124,12 +126,15 @@ export class SyncedSet<T, R> extends EventTarget {
 
           next = this.options.reducer(curr)
 
-          if (!this.options.equal(prev, next)) {
-            this.updated.add(object)
-            this.send()
-          }
+          const equal = this.options.equal(prev, next)
 
           prev = next
+
+          if (!equal) {
+            this.updated.add(object)
+            this.send()
+            this.emit('update', object, key)
+          }
         },
       }))
 
@@ -138,9 +143,7 @@ export class SyncedSet<T, R> extends EventTarget {
         this.send()
       }
 
-      if (typeof CustomEvent !== 'undefined') {
-        dispatch(this as SyncedSet<T, R>, 'add', object)
-      }
+      this.emit('add', object)
     }
 
     return this
@@ -158,9 +161,7 @@ export class SyncedSet<T, R> extends EventTarget {
     this.deleted.add(id)
     this.send()
 
-    if (typeof CustomEvent !== 'undefined') {
-      dispatch(this as SyncedSet<T, R>, 'delete', object)
-    }
+    this.emit('delete', object)
 
     return true
   }
