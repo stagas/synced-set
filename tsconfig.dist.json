@@ -11,13 +11,13 @@
     "types"
   ],
   "compilerOptions": {
-    "jsx": "react-jsx",
     "types": [
       "./types/globals",
       "./types/modules",
       "audioworklet",
       "node",
-      "webmidi"
+      "webmidi",
+      "offscreencanvas"
     ]
   }
 }
